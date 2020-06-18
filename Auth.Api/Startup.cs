@@ -38,6 +38,7 @@ namespace Auth.Api
                 options.AddPolicy("CorsPolicy",
                     builder => builder
                     .SetIsOriginAllowed((host) => true)
+                    .WithOrigins("https://localhost:5001")
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials());
@@ -129,21 +130,20 @@ namespace Auth.Api
             }
 
             app.UseSwagger();
-            app.UseCors("CorsPolicy");
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Api v1");
-            });
-
             app.UseHttpsRedirection();
-
             app.UseRouting();
+            app.UseCors("CorsPolicy");
 
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+            });
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Api v1");
             });
         }
     }
