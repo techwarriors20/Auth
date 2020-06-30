@@ -1,0 +1,16 @@
+apiVersion : apps/v1beta1
+kind: Deployment
+metadata:
+  name: "auth-d631"
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: "auth-d631"
+    spec:
+      containers:
+        - name: "auth-d631"
+          image: "authreg.azurecr.io/auth"
+          ports:
+          - containerPort: 80
