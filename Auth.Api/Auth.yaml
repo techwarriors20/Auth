@@ -29,5 +29,5 @@ spec:
         imagePullPolicy: IfNotPresent
         name: auth
         ports:
-        - containerPort: 5100
+        - containerPort: 80
       restartPolicy: Always
