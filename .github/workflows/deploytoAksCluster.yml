@@ -1,0 +1,63 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - uses: actions/checkout@master
+    
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Create ACR
+      id: create-acr
+      run: |
+        az acr create -n authreg -g authrega134-rg --location "Central US" --sku Standard --admin-enabled
+        echo "::set-output name=acr_username::`az acr credential show -n authreg --query username | xargs`"
+        echo "::set-output name=acr_password::`az acr credential show -n authreg --query passwords[0].value | xargs`"
+        echo "::add-mask::`az acr credential show -n authreg --query passwords[0].value | xargs`"
+
+    - uses: azure/docker-login@v1
+      with:
+        login-server: authreg.azurecr.io
+        username: ${{ steps.create-acr.outputs.acr_username }}
+        password: ${{ steps.create-acr.outputs.acr_password }}
+
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/Auth.Api" -f  "Auth.Api/Dockerfile" -t authreg.azurecr.io/auth:${{ github.sha }}
+        docker push authreg.azurecr.io/auth:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      id: login
+      with:
+         kubeconfig: ${{ secrets.aks_auth_kubeConfig }}
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep auth2be4 | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace auth2be4`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: auth2be4
+        container-registry-url: authreg.azurecr.io
+        container-registry-username: ${{ steps.create-acr.outputs.acr_username }}
+        container-registry-password: ${{ steps.create-acr.outputs.acr_password }}
+        secret-name: authdockerauth
+       
+    - uses: azure/k8s-deploy@v1
+      with:
+        namespace: auth2be4
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+        images: |
+          authreg.azurecr.io/auth:${{ github.sha }}
+        imagepullsecrets: |
+          authdockerauth

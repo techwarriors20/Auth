@@ -1,0 +1,16 @@
+apiVersion : apps/v1beta1
+kind: Deployment
+metadata:
+  name: "auth-7ce1"
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: "auth-7ce1"
+    spec:
+      containers:
+        - name: "auth-7ce1"
+          image: "reflectreg.azurecr.io/auth"
+          ports:
+          - containerPort: 80

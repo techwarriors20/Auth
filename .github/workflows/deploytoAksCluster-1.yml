@@ -1,0 +1,50 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: reflectreg.azurecr.io
+        username: ${{ secrets.acr_reflectreg_username }}
+        password: ${{ secrets.acr_reflectreg_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/Auth.Api" -f  "Auth.Api/Dockerfile" -t reflectreg.azurecr.io/auth:${{ github.sha }}
+        docker push reflectreg.azurecr.io/auth:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_auth_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep auth47b0 | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace auth47b0`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: auth47b0
+        container-registry-url: reflectreg.azurecr.io
+        container-registry-username: ${{ secrets.acr_reflectreg_username }}
+        container-registry-password: ${{ secrets.acr_reflectreg_password }}
+        secret-name: authdockerauth
+       
+    - uses: azure/k8s-deploy@v1
+      with:
+        namespace: auth47b0
+        manifests: |
+          manifests/deployment-1.yml
+          manifests/service-1.yml
+        images: |
+          reflectreg.azurecr.io/auth:${{ github.sha }}
+        imagepullsecrets: |
+          authdockerauth

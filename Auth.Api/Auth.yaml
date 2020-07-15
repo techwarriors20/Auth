@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    system: auth
+    app: auth.api
+    version: "2.0"
+  name: authapi-v2
+  namespace: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      system: auth
+      app: auth.api
+      version: "2.0"
+  template:
+    metadata:
+      labels:
+        system: auth
+        app: auth.api
+        version: "2.0"
+    spec:
+      containers:
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Production
+        image: auth/authapi:2.0
+        imagePullPolicy: IfNotPresent
+        name: auth
+        ports:
+        - containerPort: 80
+      restartPolicy: Always
