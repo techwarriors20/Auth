@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Auth.Api.Infrastructure.Handlers;
 using Auth.Api.Infrastructure.Helpers;
+using Auth.Api.Infrastructure.ServiceDiscovery;
 using Auth.Api.Models;
 using Auth.Api.Services;
 using Microsoft.AspNetCore.Builder;
@@ -15,6 +17,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Polly;
 
 namespace Auth.Api
 {
@@ -55,23 +58,23 @@ namespace Auth.Api
             services.AddSingleton<UserService>();
             #endregion
 
-            // #region Service Discovery
-            // ConfigureConsul(services);
-            // #endregion
+            #region Service Discovery
+            ConfigureConsul(services);
+            #endregion
 
-            // #region CircuitBreaker
-            // gatewayBaseURL = Configuration["GatewayBaseURL"];
+            #region CircuitBreaker
+            gatewayBaseURL = Configuration["GatewayBaseURL"];
 
-            // services.AddHttpClient("gateway", c =>
-            // {
-            //     c.BaseAddress = new Uri(gatewayBaseURL);
-            // })
-            //.AddHttpMessageHandler<AccessTokenHttpMessageHandler>()
-            //.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
-            //    handledEventsAllowedBeforeBreaking: 2,
-            //    durationOfBreak: TimeSpan.FromMinutes(1)
-            //));
-            // #endregion
+            services.AddHttpClient("gateway", c =>
+            {
+                c.BaseAddress = new Uri(gatewayBaseURL);
+            })
+           .AddHttpMessageHandler<AccessTokenHttpMessageHandler>()
+           .AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
+               handledEventsAllowedBeforeBreaking: 2,
+               durationOfBreak: TimeSpan.FromMinutes(1)
+           ));
+            #endregion
 
             #region AppSetting
             // configure strongly typed settings objects
@@ -84,6 +87,7 @@ namespace Auth.Api
             //        .AddJsonOptions(options => options.UseMemberCasing())
             //        .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
             #endregion
+
             #region "Swagger"
             services.AddSwaggerGen(c =>
             {
@@ -145,6 +149,13 @@ namespace Auth.Api
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Api v1");
             });
+        }
+
+        private void ConfigureConsul(IServiceCollection services)
+        {
+            var serviceConfig = Configuration.GetServiceConfig();
+
+            services.RegisterConsulServices(serviceConfig);
         }
     }
 }
