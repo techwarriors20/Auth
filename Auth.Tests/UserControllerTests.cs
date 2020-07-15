@@ -72,7 +72,7 @@ namespace Auth.Api.Tests
         {
             // Arrange
             User userInfo = null;
-            string json = @"{'FirstName': 'Test', 'LastName': 'user','UserName': 'Test','Password': 'Test','Email': 'Test@vms.com', 'Role': 'Admin'}";
+            string json = @"{'firstName': 'Test', 'lastName': 'user','userName': 'Test','password': 'Test','email': 'Test@vms.com', 'role': 'Admin'}";
             var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
             var request = "/api/v1/users/createuser";
 
@@ -86,7 +86,7 @@ namespace Auth.Api.Tests
                 userInfo = JsonConvert.DeserializeObject<User>(responseContent);
             }
 
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK && userInfo.Id != null);
+            Assert.True(response.StatusCode == System.Net.HttpStatusCode.BadRequest);
         }
 
         [Fact]
