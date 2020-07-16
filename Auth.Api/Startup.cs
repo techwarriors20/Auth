@@ -54,27 +54,30 @@ namespace Auth.Api
 
             services.AddSingleton<IUserstoreDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<UserstoreDatabaseSettings>>().Value);
+            #endregion
 
-            services.AddSingleton<UserService>();
+            #region DI
+            services.AddScoped<IUserReadService,UserReadService>();
+            services.AddScoped<IUserWriteService, UserWriteService>();
             #endregion
 
             #region Service Discovery
-            ConfigureConsul(services);
+            //ConfigureConsul(services);
             #endregion
 
-            #region CircuitBreaker
-            gatewayBaseURL = Configuration["GatewayBaseURL"];
+           // #region CircuitBreaker
+           // gatewayBaseURL = Configuration["GatewayBaseURL"];
 
-            services.AddHttpClient("gateway", c =>
-            {
-                c.BaseAddress = new Uri(gatewayBaseURL);
-            })
-           .AddHttpMessageHandler<AccessTokenHttpMessageHandler>()
-           .AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
-               handledEventsAllowedBeforeBreaking: 2,
-               durationOfBreak: TimeSpan.FromMinutes(1)
-           ));
-            #endregion
+           // services.AddHttpClient("gateway", c =>
+           // {
+           //     c.BaseAddress = new Uri(gatewayBaseURL);
+           // })
+           //.AddHttpMessageHandler<AccessTokenHttpMessageHandler>()
+           //.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
+           //    handledEventsAllowedBeforeBreaking: 2,
+           //    durationOfBreak: TimeSpan.FromMinutes(1)
+           //));
+           // #endregion
 
             #region AppSetting
             // configure strongly typed settings objects

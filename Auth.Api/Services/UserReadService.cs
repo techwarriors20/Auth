@@ -13,13 +13,13 @@ using System.Text;
 
 namespace Auth.Api.Services
 {
-    public class UserService
+    public class UserReadService : IUserReadService
     {
         private readonly IMongoCollection<User> _users;
         private readonly AppSettings _appSettings;
 
         #region UserService Constructor
-        public UserService(IUserstoreDatabaseSettings settings, IOptions<AppSettings> appSettings)
+        public UserReadService(IUserstoreDatabaseSettings settings, IOptions<AppSettings> appSettings)
         {
             var client = new MongoClient(settings.ConnectionString);
             var database = client.GetDatabase(settings.DatabaseName);
@@ -27,7 +27,7 @@ namespace Auth.Api.Services
             _users = database.GetCollection<User>(settings.UsersCollectionName);
 
             _appSettings = appSettings.Value;
-        }       
+        }
 
         #endregion
 
@@ -36,8 +36,8 @@ namespace Auth.Api.Services
 
         public User Authenticate(string username, string password)
         {
-             var user = _users.Find<User>(usr => usr.UserName == username && usr.Password == password).FirstOrDefault();
-            
+            var user = _users.Find<User>(usr => usr.UserName == username && usr.Password == password).FirstOrDefault();
+
             // return null if user not found
             if (user == null)
                 return null;
@@ -62,13 +62,7 @@ namespace Auth.Api.Services
             user.Password = null;
 
             return user;
-        }       
-
-        public User Create(User user)
-        {
-            _users.InsertOne(user);
-            return user;
-        }       
+        }
     }
 }
 #endregion

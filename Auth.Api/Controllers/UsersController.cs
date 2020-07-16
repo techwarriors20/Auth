@@ -10,18 +10,20 @@ namespace Auth.Api.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly UserService _userService;
+        private readonly IUserReadService _userReadService;
+        private readonly IUserWriteService _userWriteService;
 
-        public UsersController(UserService userService)
+        public UsersController(IUserReadService userReadService, IUserWriteService userWriteService)
         {
-            _userService = userService;
+            _userReadService = userReadService;
+            _userWriteService = userWriteService;
         }
         
         [AllowAnonymous]
         [HttpPost("login")]
         public IActionResult Login([FromBody]Login login)
         {
-            var user = _userService.Authenticate(login.UserName, login.Password);
+            var user = _userReadService.Authenticate(login.UserName, login.Password);
 
             if (user == null)
                 return BadRequest(new { message = "Username or password is incorrect" });
@@ -31,12 +33,12 @@ namespace Auth.Api.Controllers
 
         [HttpGet("getusers")]
         public ActionResult<List<User>> Get() =>
-            _userService.Get();        
+            _userReadService.Get();        
 
         [HttpPost("createuser")]
         public ActionResult<User> Create(User user)
         {
-            _userService.Create(user);
+            _userWriteService.Create(user);
 
             return Ok(user);
         }      
